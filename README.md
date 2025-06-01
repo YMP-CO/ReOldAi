@@ -7,7 +7,7 @@
 <center><img src="https://img.shields.io/badge/license-CC--BY%204.0-blue.svg"></center>
 <h3 align="center">ReOldAI</h3>
 <center><h5>Unofficial Gemini client for Android 2.3+<h5></center>
-
+<center><h6>"Gemini" and other related trademarks are trademarks of Google. Google is not associated with ReOldAi or YMP Yuri.<h6></center>
 <div align="center">
   <a href="https://ymp-co.github.io">Website</a> • 
   <a href="https://boosty.to/gachic_the_geek">Boosty</a> • 
