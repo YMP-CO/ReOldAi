@@ -1,55 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ReOldAI</string>
-    <string name="settings_title">Настройки AI</string>
+    <string name="settings_title">AI Settings</string>
 
     <!-- Welcome Screen -->
-    <string name="welcome_title_1">Добро пожаловать!</string>
-    <string name="welcome_text_1">Откройте для себя мощь искусственного интеллекта прямо на вашем старом устройстве.</string>
-    <string name="welcome_title_2">Совместимость для старых устройств</string>
-    <string name="welcome_text_2">Разработано специально для Android 2.3+ с использованием современных технологий.</string>
-    <string name="welcome_title_3">Гибкие настройки</string>
-    <string name="welcome_text_3">Настройте модель AI для оптимальной работы.</string>
-    <string name="welcome_button_start">Начать</string>
+    <string name="welcome_title_1">Welcome!</string>
+    <string name="welcome_text_1">Discover the power of Artificial Intelligence right on your old device.</string>
+    <string name="welcome_title_2">Compatibility for Older Devices</string>
+    <string name="welcome_text_2">Developed specifically for Android 2.3+ using modern technologies.</string>
+    <string name="welcome_title_3">Flexible Settings</string>
+    <string name="welcome_text_3">Configure the AI model for optimal performance.</string>
+    <string name="welcome_button_start">Get Started</string>
 
     <!-- Settings Inputs -->
-    <string name="api_key_label">API ключ (Gemini):</string>
-    <string name="api_key_hint">Ваш Gemini API ключ</string>
-    <string name="ai_model_label">Модель AI:</string>
-    <string name="save_settings">Сохранить настройки</string>
+    <string name="api_key_label">API Key (Gemini):</string>
+    <string name="api_key_hint">Your Gemini API key</string>
+    <string name="ai_model_label">AI Model:</string>
+    <string name="save_settings">Save Settings</string>
 
     <!-- Generation Settings -->
-    <string name="generation_config_label">Настройки генерации:</string>
-    <string name="temperature_label">Температура:</string>
-    <string name="temperature_hint">0.0 (детерминированный) - 1.0+ (креативный)</string>
+    <string name="generation_config_label">Generation Settings:</string>
+    <string name="temperature_label">Temperature:</string>
+    <string name="temperature_hint">0.0 (deterministic) - 1.0+ (creative)</string>
     <string name="top_k_label">Top K:</string>
-    <string name="top_k_hint">От 1 до 40 (меньше - точнее, больше - разнообразнее)</string>
+    <string name="top_k_hint">From 1 to 40 (lower - more precise, higher - more diverse)</string>
     <string name="top_p_label">Top P:</string>
-    <string name="top_p_hint">0.0 (детерминированный) - 1.0 (креативный)</string>
+    <string name="top_p_hint">0.0 (deterministic) - 1.0 (creative)</string>
 
     <!-- About App -->
-    <string name="about_app_label">О приложении:</string>
-    <string name="app_version_label">Версия:</string>
-    <string name="used_libraries_label">Использованные библиотеки:</string>
-    <string name="gemini_info_label">Информация о Gemini:</string>
-    <string name="libraries_list">Android Support Library (AppCompat, v4), Conscrypt, Google GSON</string>
-    <string name="gemini_api_info">Использует официальный API Gemini 1.5 Flash / Gemini Pro / Gemini 2.0 Flash.</string>
+    <string name="about_app_label">About the App:</string>
+    <string name="app_version_label">Version:</string>
+    <string name="used_libraries_label">Used Libraries:</string>
+    <string name="gemini_info_label">Gemini Information:</string>
+    <string name="libraries_list">Android Support Library (AppCompat, v4), Conscrypt, Google GSON, Google Fonts (Fira Code)</string>
+    <string name="gemini_api_info">Uses official Gemini 1.5 Flash / Gemini Pro / Gemini 2.0 Flash API.</string>
 
     <!-- AI Models Array -->
     <string-array name="ai_models_array">
         <item>Gemini 1.5 Flash</item>
         <item>Gemini 2.0 Flash</item>
     </string-array>
+    <string name="privacy_policy_google_label">Google Privacy Policy: https://policies.google.com/privacy</string>
+    <string name="privacy_policy_gemini_label">Google AI Studio (Gemini) Terms of Service: https://ai.google.dev/gemini-api/terms</string>
 
-    <string name="invalid_temperature_format_toast">Неверный формат температуры. Используется значение по умолчанию.</string>
-    <string name="invalid_top_k_format_toast">Неверный формат Top K. Используется значение по умолчанию.</string>
-    <string name="invalid_top_p_format_toast">Неверный формат Top P. Используется значение по умолчанию.</string>
-    <string name="settings_saved_toast">Настройки сохранены.</string>
-    <string name="privacy_policy_google_label">Политика конфиденциальности Google: https://policies.google.com/privacy</string>
-    <string name="privacy_policy_gemini_label">Политика Google AI (Gemini): https://policies.google.com/privacy</string>
-    <string name="social_media_label">Мои соцсети:</string>
+    <string name="social_media_label">My social media:</string>
     <string name="social_youtube_ymp_yuri">YouTube (YMP Yuri): https://www.youtube.com/@YMP_Yuri</string>
     <string name="social_github_ymp_yuri">GitHub (YMP_CO): https://github.com/YMP-CO</string>
     <string name="social_boosty_ymp_yuri">Boosty (YMP Yuri): https://boosty.to/gachic_the_geek</string>
-    <string name="enter_message">Введите сообщение…</string>
+    <string name="invalid_temperature_format_toast">Invalid temperature format. Default value will be used.</string>
+    <string name="invalid_top_k_format_toast">Invalid Top K format. Default value will be used.</string>
+    <string name="invalid_top_p_format_toast">Invalid Top P format. Default value will be used.</string>
+    <string name="settings_saved_toast">Settings saved.</string>
+    <string name="enter_message">Enter a message…</string>
+    <string name="chat_history_name_format">Chat %s</string>
+    <string name="welcome_message">How can I help you?</string>
+    <string name="failed_to_save_chat">Error saving chat: %s</string>
+    <string name="permission_denied">Permission to write to storage denied. The chat could not be saved.</string>
+    <string name="no_chat_history">"There are no saved chats. "</string>
+    <string name="failed_to_delete_chat">Error deleting chat.</string>
+    <string name="saved_chats_title">Saved chats</string>
+    <string name="delete_chat_dialog_title">Delete chat?</string>
+    <string name="delete_chat_dialog_message">Are you sure you want to delete chat \"%s\"?</string>
+    <string name="without_api">Without the API key, this application will not work properly.</string>
+    <string name="enter_api_key">Please enter your API key in the settings.</string>
+    <string name="say">Say something...</string>
+    <string name="no_chat_for_save">There is no chat history to save.</string>
+    <string name="error_create_chat">Failed to create a directory for chats.</string>
+    <string name="error_chat_load">The downloaded chat file is empty or corrupted.</string>
+    <string name="error_voice_input">Your device does not support voice input</string>
+    <string name="error_empty">The API key cannot be empty.</string>
+    <string name="api_key_saved">API key saved.</string>
+    <string name="save">Save</string>
+    <string name="action_save_chat">Save chat</string>
+    <string name="action_view_saved_chats">History chat</string>
 </resources>

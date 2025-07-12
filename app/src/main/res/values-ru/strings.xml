@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ReOldAI</string>
+    <string name="settings_title">Настройки AI</string>
+
+    <!-- Welcome Screen -->
+    <string name="welcome_title_1">Добро пожаловать!</string>
+    <string name="welcome_text_1">Откройте для себя мощь искусственного интеллекта прямо на вашем старом устройстве.</string>
+    <string name="welcome_title_2">Совместимость для старых устройств</string>
+    <string name="welcome_text_2">Разработано специально для Android 2.3+ с использованием современных технологий.</string>
+    <string name="welcome_title_3">Гибкие настройки</string>
+    <string name="welcome_text_3">Настройте модель AI для оптимальной работы.</string>
+    <string name="welcome_button_start">Начать</string>
+
+    <!-- Settings Inputs -->
+    <string name="api_key_label">API ключ (Gemini):</string>
+    <string name="api_key_hint">Ваш Gemini API ключ</string>
+    <string name="ai_model_label">Модель AI:</string>
+    <string name="save_settings">Сохранить настройки</string>
+
+    <!-- Generation Settings -->
+    <string name="generation_config_label">Настройки генерации:</string>
+    <string name="temperature_label">Температура:</string>
+    <string name="temperature_hint">0.0 (детерминированный) - 1.0+ (креативный)</string>
+    <string name="top_k_label">Top K:</string>
+    <string name="top_k_hint">От 1 до 40 (меньше - точнее, больше - разнообразнее)</string>
+    <string name="top_p_label">Top P:</string>
+    <string name="top_p_hint">0.0 (детерминированный) - 1.0 (креативный)</string>
+
+    <!-- About App -->
+    <string name="about_app_label">О приложении:</string>
+    <string name="app_version_label">Версия:</string>
+    <string name="used_libraries_label">Использованные библиотеки:</string>
+    <string name="gemini_info_label">Информация о Gemini:</string>
+    <string name="gemini_api_info">Использует официальный API Gemini 1.5 Flash / Gemini Pro / Gemini 2.0 Flash.</string>
+
+    <!-- AI Models Array -->
+    <string-array name="ai_models_array">
+        <item>Gemini 1.5 Flash</item>
+        <item>Gemini 2.0 Flash</item>
+    </string-array>
+
+    <string name="invalid_temperature_format_toast">Неверный формат температуры. Используется значение по умолчанию.</string>
+    <string name="invalid_top_k_format_toast">Неверный формат Top K. Используется значение по умолчанию.</string>
+    <string name="invalid_top_p_format_toast">Неверный формат Top P. Используется значение по умолчанию.</string>
+    <string name="settings_saved_toast">Настройки сохранены.</string>
+    <string name="privacy_policy_google_label">Политика конфиденциальности Google: https://policies.google.com/privacy</string>
+    <string name="privacy_policy_gemini_label">Условия оказания услуг Google AI Studio (Gemini): https://ai.google.dev/gemini-api/terms</string>
+    <string name="social_media_label">Мои соцсети:</string>
+    <string name="social_youtube_ymp_yuri">YouTube (YMP Yuri): https://www.youtube.com/@YMP_Yuri</string>
+    <string name="social_github_ymp_yuri">GitHub (YMP_CO): https://github.com/YMP-CO</string>
+    <string name="social_boosty_ymp_yuri">Boosty (YMP Yuri): https://boosty.to/gachic_the_geek</string>
+    <string name="enter_message">Введите сообщение…</string>
+
+    <string name="action_save_chat" translatable="false">Сохранить чат</string>
+    <string name="action_view_saved_chats" translatable="false">История чатов</string>
+    <string name="failed_to_save_chat">Ошибка при сохранении чата: %s</string>
+    <string name="permission_denied">Разрешение на запись в хранилище отклонено. Чат не может быть сохранен.</string>
+    <string name="no_chat_history">"Нет сохраненных чатов. "</string>
+    <string name="delete_chat_dialog_title">Удалить чат?</string>
+    <string name="delete_chat_dialog_message">Вы действительно хотите удалить чат \"%s\"?</string>
+    <string name="failed_to_delete_chat">Ошибка при удалении чата.</string>
+    <string name="saved_chats_title">Сохраненные чаты</string>
+    <string name="chat_history_name_format">Чат от %s</string>
+    <string name="welcome_message">Чем я могу помочь?</string>
+    <string name="libraries_list">Android Support Library (AppCompat, v4), Conscrypt, Google GSON, Google Fonts (Fira Code)</string>
+    <string name="without_api">Без ключа API это приложение не будет работать должным образом.</string>
+    <string name="enter_api_key">Пожалуйста, введите ваш ключ API в настройках.</string>
+    <string name="say">Скажите что-нибудь...</string>
+    <string name="no_chat_for_save">Нет истории чата для сохранения.</string>
+    <string name="error_create_chat">Не удалось создать директорию для чатов.</string>
+    <string name="error_chat_load">Загруженный файл чата пуст или поврежден.</string>
+    <string name="error_voice_input">Ваше устройство не поддерживает голосовой ввод</string>
+    <string name="error_empty">Ключ API не может быть пустым.</string>
+    <string name="api_key_saved">Ключ API сохранен.</string>
+    <string name="save">Сохранить</string>
+</resources>

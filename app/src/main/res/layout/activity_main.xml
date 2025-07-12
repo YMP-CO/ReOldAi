@@ -17,6 +17,22 @@
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
         android:layout_alignParentTop="true"/>
 
+    <!-- Чем я могу помочь? -->
+    <TextView
+        android:id="@+id/welcome_message_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/toolbar"
+        android:layout_above="@+id/input_area"
+        android:layout_centerHorizontal="true"
+        android:gravity="center"
+        android:text="@string/welcome_message"
+        android:textColor="@color/grey_medium"
+        android:textSize="18sp"
+        android:padding="16dp"
+        android:fontFamily="@font/fira_code"
+        android:visibility="gone" />
+
     <ListView
         android:id="@+id/chat_list_view"
         android:layout_width="match_parent"
@@ -49,11 +65,10 @@
             android:inputType="textMultiLine"
             android:maxLines="4"
             android:paddingLeft="12dp"
-            android:paddingRight="12dp"
             android:paddingTop="10dp"
+            android:paddingRight="12dp"
             android:paddingBottom="10dp"
-            android:textColor="@color/black"
-            android:background="@android:drawable/editbox_background"/>
+            android:textColor="@color/black" />
 
         <LinearLayout
             android:id="@+id/button_container"

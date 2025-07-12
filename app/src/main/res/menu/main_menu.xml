@@ -5,5 +5,15 @@
         android:id="@+id/action_settings"
         android:icon="@drawable/ic_settings"
         android:title="@string/settings_title"
-        app:showAsAction="ifRoom" /> <!-- Здесь API11+ -->
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_save_chat"
+        android:icon="@drawable/ic_save"
+        android:title="@string/action_save_chat"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_view_saved_chats"
+        android:icon="@drawable/ic_history"
+        android:title="@string/action_view_saved_chats"
+        app:showAsAction="ifRoom" />
 </menu>

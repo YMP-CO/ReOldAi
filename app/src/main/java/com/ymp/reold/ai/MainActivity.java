@@ -1,6 +1,6 @@
 package com.ymp.reold.ai;
 
-import android.app.AlertDialog;
+import android.Manifest;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -8,10 +8,19 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.Settings;
 import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
@@ -32,26 +41,40 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
     //Наше основное активити.
     private static final String TAG = "MainActivity";
     private static final int SPEECH_INPUT_REQUEST_CODE = 100;
+    private static final int REQUEST_WRITE_EXTERNAL_STORAGE = 1; // Для API < 30
+    private static final int MANAGE_EXTERNAL_STORAGE_REQUEST_CODE = 2; // Для API >= 30
+
     private static final String PREFS_NAME = "AIPrefs";
     private static final String API_KEY_PREF = "ai_api_key";
     private static final String AI_MODEL_PREF = "ai_model";
     private static final String TEMPERATURE_PREF = "temperature";
     private static final String TOP_K_PREF = "top_k";
     private static final String TOP_P_PREF = "top_p";
+    private static final String CHAT_HISTORY_LIST_PREF = "chat_history_list";
+    private static final String WARNING_DIALOG_PREFS = "WarningDialogPrefs";
+    private static final String HAS_WARNING_DIALOG_SHOWN = "hasWarningDialogShown";
+
 
     private EditText promptEditText;
     private ImageButton sendButton;
@@ -59,12 +82,14 @@ public class MainActivity extends AppCompatActivity {
     private ListView chatListView;
     private ChatMessageAdapter chatAdapter;
     private ArrayList<ChatMessage> chatMessages;
-
+    private TextView welcomeMessageTextView;
     private String aiApiKey;
     private String selectedAiModel;
     private float temperature;
     private int topK;
     private float topP;
+    private TextToSpeech tts;
+    private boolean isVoiceInputActive = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,13 +99,14 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        promptEditText = (EditText) findViewById(R.id.prompt_edit_text);
-        sendButton = (ImageButton) findViewById(R.id.send_button);
-        micButton = (ImageButton) findViewById(R.id.mic_button);
-        chatListView = (ListView) findViewById(R.id.chat_list_view);
+        promptEditText = findViewById(R.id.prompt_edit_text);
+        sendButton = findViewById(R.id.send_button);
+        micButton = findViewById(R.id.mic_button);
+        chatListView = findViewById(R.id.chat_list_view);
+        welcomeMessageTextView = findViewById(R.id.welcome_message_text_view);
 
         chatMessages = new ArrayList<>();
-        chatAdapter = new ChatMessageAdapter(this, chatMessages);
+        chatAdapter = new ChatMessageAdapter(this, chatMessages, this);
         chatListView.setAdapter(chatAdapter);
 
         loadSettings();
@@ -89,9 +115,41 @@ public class MainActivity extends AppCompatActivity {
             showApiKeyDialog(true);
         }
 
+        SharedPreferences warningPrefs = getSharedPreferences(WARNING_DIALOG_PREFS, Context.MODE_PRIVATE);
+        boolean hasWarningDialogBeenShown = warningPrefs.getBoolean(HAS_WARNING_DIALOG_SHOWN, false);
+
+        if (!hasWarningDialogBeenShown) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Warning!");
+            builder.setMessage("• Gemini API is provided by Google. Use of the API is subject to the Google API Terms of Use and Google's Privacy Policy.\n" +
+                    "\n" +
+                    "• Chat messages are sent to the Google API to generate responses.\n" +
+                    "\n" +
+                    "• Your API key is stored only on your device.\n" +
+                    "\n" +
+                    "Links:\n" +
+                    "https://developers.google.com/terms\n" +
+                    "https://policies.google.com/privacy\n" +
+                    "https://ai.google.dev/gemini-api/terms\n" +
+                    "\n" +
+                    "This dialog will only be shown once.");
+            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    SharedPreferences.Editor editor = warningPrefs.edit();
+                    editor.putBoolean(HAS_WARNING_DIALOG_SHOWN, true);
+                    editor.apply();
+                    dialog.dismiss();
+                }
+            });
+            builder.setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+        }
+
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                isVoiceInputActive = false; // Reset for text input
                 sendMessage();
             }
         });
@@ -102,17 +160,54 @@ public class MainActivity extends AppCompatActivity {
                 startVoiceInput();
             }
         });
+
+        // TextToSpeech
+        tts = new TextToSpeech(this, this);
+
+        if (getIntent() != null && getIntent().hasExtra(ChatHistoryActivity.EXTRA_CHAT_FILE_PATH)) {
+            String filePath = getIntent().getStringExtra(ChatHistoryActivity.EXTRA_CHAT_FILE_PATH);
+            loadChatFromFile(filePath);
+        } else {
+            updateWelcomeMessageVisibility();
+        }
+    }
+
+    @Override
+    public void onInit(int status) {
+        if (status == TextToSpeech.SUCCESS) {
+            int result = tts.setLanguage(Locale.getDefault());
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e(TAG, "TTS: This Language is not supported");
+            }
+        } else {
+            Log.e(TAG, "TTS: Initialization Failed!");
+        }
+    }
+
+    private void speakOut(String text) {
+        if (tts != null && !TextUtils.isEmpty(text)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+            } else {
+                tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+            }
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         loadSettings();
+        updateWelcomeMessageVisibility();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
     }
 
     private void loadSettings() {
@@ -126,16 +221,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void showApiKeyDialog(final boolean isFirstLaunch) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(isFirstLaunch ? "Enter API key" : "Enter API key");
+        builder.setTitle(isFirstLaunch ? R.string.error_empty : R.string.enter_api_key);
 
         final EditText input = new EditText(this);
-        input.setHint("API key");
+        input.setHint(R.string.enter_api_key);
         if (!TextUtils.isEmpty(aiApiKey) && !isFirstLaunch) {
             input.setText(aiApiKey);
         }
         builder.setView(input);
 
-        builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 String key = input.getText().toString().trim();
@@ -143,11 +238,11 @@ public class MainActivity extends AppCompatActivity {
                     SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
                     SharedPreferences.Editor editor = prefs.edit();
                     editor.putString(API_KEY_PREF, key);
-                    editor.commit();
+                    editor.apply();
                     aiApiKey = key;
-                    Toast.makeText(MainActivity.this, "API key saved.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, R.string.api_key_saved, Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(MainActivity.this, "The API key cannot be empty.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, R.string.error_empty, Toast.LENGTH_LONG).show();
                     if (isFirstLaunch) {
                         showApiKeyDialog(true);
                     }
@@ -156,15 +251,15 @@ public class MainActivity extends AppCompatActivity {
         });
 
         if (isFirstLaunch) {
-            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.cancel();
-                    Toast.makeText(MainActivity.this, "Without the API key, this application will not function properly.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, R.string.without_api, Toast.LENGTH_LONG).show();
                 }
             });
         } else {
-            builder.setNegativeButton("Cancel", null);
+            builder.setNegativeButton(android.R.string.cancel, null);
         }
 
         builder.show();
@@ -173,12 +268,12 @@ public class MainActivity extends AppCompatActivity {
     private void sendMessage() {
         String prompt = promptEditText.getText().toString().trim();
         if (TextUtils.isEmpty(prompt)) {
-            Toast.makeText(this, "Please enter a message.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.enter_message, Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (TextUtils.isEmpty(aiApiKey)) {
-            Toast.makeText(this, "Please enter your AI API key in settings.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.enter_api_key, Toast.LENGTH_LONG).show();
             showApiKeyDialog(false);
             return;
         }
@@ -186,22 +281,25 @@ public class MainActivity extends AppCompatActivity {
         chatMessages.add(new ChatMessage(prompt, ChatMessage.SenderRole.USER));
         chatAdapter.notifyDataSetChanged();
         promptEditText.setText("");
-
-        new AICallTask().execute(chatMessages);
+        updateWelcomeMessageVisibility();
+        new AICallTask(isVoiceInputActive).execute(chatMessages);
+        isVoiceInputActive = false; // Reset after sending message
     }
 
     private void startVoiceInput() {
+        isVoiceInputActive = true;
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Say something...");
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, R.string.say);
 
         try {
             startActivityForResult(intent, SPEECH_INPUT_REQUEST_CODE);
         } catch (ActivityNotFoundException a) {
             Toast.makeText(getApplicationContext(),
-                    "Your device does not support voice input.",
+                    R.string.error_voice_input,
                     Toast.LENGTH_SHORT).show();
+            isVoiceInputActive = false; // Reset if activity not found
         }
     }
 
@@ -215,6 +313,19 @@ public class MainActivity extends AppCompatActivity {
                 if (result != null && !result.isEmpty()) {
                     promptEditText.setText(result.get(0));
                     sendMessage();
+                } else {
+                    isVoiceInputActive = false;
+                }
+            } else {
+                isVoiceInputActive = false;
+            }
+        }
+        else if (requestCode == MANAGE_EXTERNAL_STORAGE_REQUEST_CODE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (Environment.isExternalStorageManager()) {
+                    saveChatHistory();
+                } else {
+                    Toast.makeText(MainActivity.this, R.string.permission_denied, Toast.LENGTH_LONG).show();
                 }
             }
         }
@@ -228,15 +339,182 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_settings) {
+        int id = item.getItemId();
+        if (id == R.id.action_settings) {
             Intent settingsIntent = new Intent(MainActivity.this, SettingsActivity.class);
             startActivity(settingsIntent);
+            return true;
+        } else if (id == R.id.action_save_chat) {
+            checkStoragePermissionAndSaveChat();
+            return true;
+        } else if (id == R.id.action_view_saved_chats) {
+            Intent historyIntent = new Intent(MainActivity.this, ChatHistoryActivity.class);
+            startActivity(historyIntent);
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    private static class ChatMessage {
+    private void checkStoragePermissionAndSaveChat() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (Environment.isExternalStorageManager()) {
+                saveChatHistory();
+            } else {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                    intent.addCategory("android.intent.category.DEFAULT");
+                    intent.setData(Uri.parse(String.format("package:%s", getApplicationContext().getPackageName())));
+                    startActivityForResult(intent, MANAGE_EXTERNAL_STORAGE_REQUEST_CODE);
+                } catch (ActivityNotFoundException e) {
+                    Intent intent = new Intent();
+                    intent.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                    startActivityForResult(intent, MANAGE_EXTERNAL_STORAGE_REQUEST_CODE);
+                }
+            }
+        } else {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        REQUEST_WRITE_EXTERNAL_STORAGE);
+            } else {
+                saveChatHistory();
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == REQUEST_WRITE_EXTERNAL_STORAGE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                saveChatHistory();
+            } else {
+                Toast.makeText(this, R.string.permission_denied, Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void saveChatHistory() {
+        if (chatMessages.isEmpty()) {
+            Toast.makeText(this, R.string.no_chat_for_save, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !Environment.isExternalStorageLegacy() && !Environment.isExternalStorageManager()) {
+            Toast.makeText(this, "Saving chats to external media may be restricted on Android 10+ without the special ‘Access All Files’ permission.", Toast.LENGTH_LONG).show();
+        }
+
+        File chatDir = new File(Environment.getExternalStorageDirectory(), "ReOldAI/Chats");
+        if (!chatDir.exists()) {
+            boolean created = chatDir.mkdirs();
+            if (!created) {
+                Toast.makeText(this, R.string.error_create_chat, Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+
+        long timestamp = System.currentTimeMillis();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
+        String dateString = sdf.format(new Date(timestamp));
+        String filename = "chat_history_" + dateString + ".json";
+        File chatFile = new File(chatDir, filename);
+
+        Gson gson = new Gson();
+        String jsonChatHistory = gson.toJson(chatMessages);
+
+        try (FileOutputStream fos = new FileOutputStream(chatFile)) {
+            fos.write(jsonChatHistory.getBytes("UTF-8"));
+            String chatName = chatMessages.get(0).text;
+            if (chatName.length() > 30) {
+                chatName = chatName.substring(0, 30) + "...";
+            }
+            saveChatInfo(new SavedChatInfo(getString(R.string.chat_history_name_format, dateString) + " - " + chatName, chatFile.getAbsolutePath(), timestamp));
+            Log.d(TAG, "Chat saved to: " + chatFile.getAbsolutePath());
+        } catch (Exception e) {
+            Log.e(TAG, "Error saving chat: " + e.getMessage());
+            Toast.makeText(this, getString(R.string.failed_to_save_chat, e.getMessage()), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void saveChatInfo(SavedChatInfo info) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        List<SavedChatInfo> savedChats = loadSavedChats();
+        boolean found = false;
+        for (int i = 0; i < savedChats.size(); i++) {
+            if (savedChats.get(i).getFilePath().equals(info.getFilePath())) {
+                savedChats.set(i, info);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            savedChats.add(info);
+        }
+        String jsonSavedChats = new Gson().toJson(savedChats);
+        editor.putString(CHAT_HISTORY_LIST_PREF, jsonSavedChats);
+        editor.apply();
+    }
+
+    private List<SavedChatInfo> loadSavedChats() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String jsonSavedChats = prefs.getString(CHAT_HISTORY_LIST_PREF, "[]");
+        Type type = new TypeToken<List<SavedChatInfo>>(){}.getType();
+        return new Gson().fromJson(jsonSavedChats, type);
+    }
+
+    private void loadChatFromFile(String filePath) {
+        File chatFile = new File(filePath);
+        if (!chatFile.exists()) {
+            Toast.makeText(this, R.string.no_chat_history + filePath, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Gson gson = new Gson();
+        StringBuilder fileContent = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(chatFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                fileContent.append(line);
+            }
+
+            Type type = new TypeToken<ArrayList<ChatMessage>>(){}.getType();
+            ArrayList<ChatMessage> loadedMessages = gson.fromJson(fileContent.toString(), type);
+
+            if (loadedMessages != null && !loadedMessages.isEmpty()) {
+                chatMessages.clear();
+                chatMessages.addAll(loadedMessages);
+                chatAdapter.notifyDataSetChanged();
+                chatListView.smoothScrollToPosition(chatMessages.size() - 1);
+            } else {
+                Toast.makeText(this, R.string.error_chat_load, Toast.LENGTH_LONG).show();
+            }
+            updateWelcomeMessageVisibility();
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading chat from file: " + e.getMessage());
+            Toast.makeText(this, R.string.error_chat_load + e.getMessage(), Toast.LENGTH_LONG).show();
+            updateWelcomeMessageVisibility();
+        }
+    }
+
+    private void updateWelcomeMessageVisibility() {
+        if (chatMessages.isEmpty()) {
+            welcomeMessageTextView.setVisibility(View.VISIBLE);
+            chatListView.setVisibility(View.GONE);
+        } else {
+            welcomeMessageTextView.setVisibility(View.GONE);
+            chatListView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    public void onChatMessageListChanged() {
+        updateWelcomeMessageVisibility();
+    }
+
+
+    public static class ChatMessage {
         public enum SenderRole { USER, MODEL }
         String text;
         SenderRole role;
@@ -248,8 +526,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private class ChatMessageAdapter extends ArrayAdapter<ChatMessage> {
-        public ChatMessageAdapter(Context context, ArrayList<ChatMessage> messages) {
+        private MainActivity mainActivityContext;
+
+        public ChatMessageAdapter(Context context, ArrayList<ChatMessage> messages, MainActivity mainActivityContext) {
             super(context, 0, messages);
+            this.mainActivityContext = mainActivityContext;
         }
 
         @Override
@@ -260,15 +541,16 @@ public class MainActivity extends AppCompatActivity {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.chat_message_item, parent, false);
             }
 
-            RelativeLayout userMessageLayout = (RelativeLayout) convertView.findViewById(R.id.user_message_layout);
-            TextView userMessageTextView = (TextView) convertView.findViewById(R.id.user_message_text_view);
-            ImageButton btnCopyUser = (ImageButton) convertView.findViewById(R.id.btn_copy_user);
-            ImageButton btnDeleteUser = (ImageButton) convertView.findViewById(R.id.btn_delete_user);
+            RelativeLayout userMessageLayout = convertView.findViewById(R.id.user_message_layout);
+            TextView userMessageTextView = convertView.findViewById(R.id.user_message_text_view);
+            ImageButton btnCopyUser = convertView.findViewById(R.id.btn_copy_user);
+            ImageButton btnDeleteUser = convertView.findViewById(R.id.btn_delete_user);
 
-            RelativeLayout aiMessageLayout = (RelativeLayout) convertView.findViewById(R.id.ai_message_layout);
-            TextView aiMessageTextView = (TextView) convertView.findViewById(R.id.ai_message_text_view);
-            ImageButton btnCopyAi = (ImageButton) convertView.findViewById(R.id.btn_copy_ai);
-            ImageButton btnDeleteAi = (ImageButton) convertView.findViewById(R.id.btn_delete_ai);
+            RelativeLayout aiMessageLayout = convertView.findViewById(R.id.ai_message_layout);
+            TextView aiMessageTextView = convertView.findViewById(R.id.ai_message_text_view);
+            ImageButton btnCopyAi = convertView.findViewById(R.id.btn_copy_ai);
+            ImageButton btnDeleteAi = convertView.findViewById(R.id.btn_delete_ai);
+            ImageButton btnTtsAi = convertView.findViewById(R.id.btn_tts_ai);
 
 
             if (message.role == ChatMessage.SenderRole.USER) {
@@ -306,38 +588,48 @@ public class MainActivity extends AppCompatActivity {
                         deleteMessage(position);
                     }
                 });
+                btnTtsAi.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (getContext() instanceof MainActivity) {
+                            ((MainActivity) getContext()).speakOut(message.text);
+                        }
+                    }
+                });
             }
 
             return convertView;
         }
 
         private void copyTextToClipboard(String text) {
-            // Для Android API 11 (Honeycomb) и выше
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                 ClipboardManager clipboard = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
                 ClipData clip = ClipData.newPlainText("AI Chat Message", text);
                 clipboard.setPrimaryClip(clip);
             }
-            // Для Android API 8, 9, 10 (Froyo, Gingerbread ->)
             else {
-                //android.text.ClipboardManager
                 android.text.ClipboardManager clipboard =
                         (android.text.ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
                 clipboard.setText(text);
             }
-            Toast.makeText(getContext(), "Copied text.", Toast.LENGTH_SHORT).show();
         }
 
         private void deleteMessage(int position) {
             chatMessages.remove(position);
             notifyDataSetChanged();
-            Toast.makeText(getContext(), "Message deleted.", Toast.LENGTH_SHORT).show();
+            if (mainActivityContext != null) {
+                mainActivityContext.onChatMessageListChanged();
+            }
         }
     }
 
     private class AICallTask extends AsyncTask<List<ChatMessage>, Void, String> {
-
         private String currentAiModel;
+        private boolean shouldSpeakResponse;
+
+        public AICallTask(boolean shouldSpeakResponse) {
+            this.shouldSpeakResponse = shouldSpeakResponse;
+        }
 
         @Override
         protected void onPreExecute() {
@@ -418,7 +710,8 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         JsonObject jsonResponse = gson.fromJson(aiResponse, JsonObject.class);
                         if (jsonResponse != null && jsonResponse.has("candidates")) {
-                            if (jsonResponse.getAsJsonArray("candidates").get(0).getAsJsonObject().getAsJsonObject("content").has("parts")) {
+                            if (jsonResponse.getAsJsonArray("candidates").size() > 0 &&
+                                    jsonResponse.getAsJsonArray("candidates").get(0).getAsJsonObject().getAsJsonObject("content").has("parts")) {
                                 String candidateText = jsonResponse.getAsJsonArray("candidates")
                                         .get(0).getAsJsonObject()
                                         .getAsJsonObject("content")
@@ -476,6 +769,10 @@ public class MainActivity extends AppCompatActivity {
             chatMessages.add(new ChatMessage(result, ChatMessage.SenderRole.MODEL));
             chatAdapter.notifyDataSetChanged();
             chatListView.smoothScrollToPosition(chatMessages.size() - 1);
+            updateWelcomeMessageVisibility();
+            if (shouldSpeakResponse) {
+                speakOut(result);
+            }
         }
     }
 }

@@ -19,9 +19,10 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/api_key_label"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                android:fontFamily="@font/fira_code"
+                android:text="@string/api_key_label"
                 android:textColor="@color/black"
                 android:layout_marginBottom="8dp"/>
 
@@ -41,6 +42,7 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="@color/black"
+                android:fontFamily="@font/fira_code"
                 android:layout_marginBottom="8dp"/>
 
             <Spinner
@@ -58,6 +60,7 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="@color/black"
+                android:fontFamily="@font/fira_code"
                 android:layout_marginBottom="8dp"/>
 
             <TextView
@@ -114,7 +117,9 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="24dp"
-                android:text="@string/save_settings" />
+                android:fontFamily="@font/fira_code"
+                android:text="@string/save_settings"
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -123,6 +128,7 @@
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:textColor="@color/primary_color"
+                android:fontFamily="@font/fira_code"
                 android:layout_marginBottom="8dp"/>
 
             <TextView
