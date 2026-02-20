@@ -17,6 +17,8 @@
     <string name="api_key_hint">Ваш Gemini API ключ</string>
     <string name="ai_model_label">Модель AI:</string>
     <string name="save_settings">Сохранить настройки</string>
+    <string name="custom_model_label">Название модели:</string>
+    <string name="custom_model_hint">Например: gemini-2.0-flash-lite</string>
 
     <!-- Generation Settings -->
     <string name="generation_config_label">Настройки генерации:</string>
@@ -32,12 +34,13 @@
     <string name="app_version_label">Версия:</string>
     <string name="used_libraries_label">Использованные библиотеки:</string>
     <string name="gemini_info_label">Информация о Gemini:</string>
-    <string name="gemini_api_info">Использует официальный API Gemini 1.5 Flash / Gemini Pro / Gemini 2.0 Flash.</string>
+    <string name="libraries_list">Android Support Library (AppCompat, v4), Conscrypt, Google GSON, Google Fonts (Fira Code)</string>
+    <string name="gemini_api_info">Использует официальный API Gemini 3.0 Flash / Gemini 2.5 Flash.</string>
 
-    <!-- AI Models Array -->
     <string-array name="ai_models_array">
-        <item>Gemini 1.5 Flash</item>
-        <item>Gemini 2.0 Flash</item>
+        <item>Gemini 3.0 Flash</item>
+        <item>Gemini 2.5 Flash</item>
+        <item>Другая модель</item>
     </string-array>
 
     <string name="invalid_temperature_format_toast">Неверный формат температуры. Используется значение по умолчанию.</string>
@@ -51,7 +54,6 @@
     <string name="social_github_ymp_yuri">GitHub (YMP_CO): https://github.com/YMP-CO</string>
     <string name="social_boosty_ymp_yuri">Boosty (YMP Yuri): https://boosty.to/gachic_the_geek</string>
     <string name="enter_message">Введите сообщение…</string>
-
     <string name="action_save_chat" translatable="false">Сохранить чат</string>
     <string name="action_view_saved_chats" translatable="false">История чатов</string>
     <string name="failed_to_save_chat">Ошибка при сохранении чата: %s</string>
@@ -63,7 +65,6 @@
     <string name="saved_chats_title">Сохраненные чаты</string>
     <string name="chat_history_name_format">Чат от %s</string>
     <string name="welcome_message">Чем я могу помочь?</string>
-    <string name="libraries_list">Android Support Library (AppCompat, v4), Conscrypt, Google GSON, Google Fonts (Fira Code)</string>
     <string name="without_api">Без ключа API это приложение не будет работать должным образом.</string>
     <string name="enter_api_key">Пожалуйста, введите ваш ключ API в настройках.</string>
     <string name="say">Скажите что-нибудь...</string>

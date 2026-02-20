@@ -23,6 +23,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.SpannableString;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -71,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     private static final String TEMPERATURE_PREF = "temperature";
     private static final String TOP_K_PREF = "top_k";
     private static final String TOP_P_PREF = "top_p";
+    private static final String CUSTOM_MODEL_PREF = "custom_model"; 
     private static final String CHAT_HISTORY_LIST_PREF = "chat_history_list";
     private static final String WARNING_DIALOG_PREFS = "WarningDialogPrefs";
     private static final String HAS_WARNING_DIALOG_SHOWN = "hasWarningDialogShown";
@@ -85,6 +87,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     private TextView welcomeMessageTextView;
     private String aiApiKey;
     private String selectedAiModel;
+    private String customModel; 
     private float temperature;
     private int topK;
     private float topP;
@@ -213,7 +216,8 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     private void loadSettings() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         aiApiKey = prefs.getString(API_KEY_PREF, null);
-        selectedAiModel = prefs.getString(AI_MODEL_PREF, "Gemini 1.5 Flash");
+        selectedAiModel = prefs.getString(AI_MODEL_PREF, "Gemini 2.5 Flash");
+        customModel = prefs.getString(CUSTOM_MODEL_PREF, ""); 
         temperature = prefs.getFloat(TEMPERATURE_PREF, 0.9f);
         topK = prefs.getInt(TOP_K_PREF, 40);
         topP = prefs.getFloat(TOP_P_PREF, 0.9f);
@@ -524,7 +528,32 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             this.role = role;
         }
     }
-
+    private SpannableString parseBold(String text) {
+        SpannableString spannable = new SpannableString(text);
+        android.text.style.StyleSpan boldSpan;
+        int start = -1;
+        int offset = 0;
+        String clean = text;
+        while (true) {
+            int open = clean.indexOf("**", offset);
+            if (open == -1) break;
+            int close = clean.indexOf("**", open + 2);
+            if (close == -1) break;
+            start = open;
+            int end = close + 2;
+            String before = clean.substring(0, open);
+            String middle = clean.substring(open + 2, close);
+            String after = clean.substring(end);
+            clean = before + middle + after;
+            spannable = new SpannableString(clean);
+            spannable.setSpan(
+                    new android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                    open, open + middle.length(),
+                    android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            offset = open + middle.length();
+        }
+        return spannable;
+    }
     private class ChatMessageAdapter extends ArrayAdapter<ChatMessage> {
         private MainActivity mainActivityContext;
 
@@ -556,7 +585,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             if (message.role == ChatMessage.SenderRole.USER) {
                 userMessageLayout.setVisibility(View.VISIBLE);
                 aiMessageLayout.setVisibility(View.GONE);
-                userMessageTextView.setText(message.text);
+                userMessageTextView.setText(parseBold(message.text));
 
                 btnCopyUser.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -574,7 +603,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             } else { // message.role == ChatMessage.SenderRole.MODEL
                 userMessageLayout.setVisibility(View.GONE);
                 aiMessageLayout.setVisibility(View.VISIBLE);
-                aiMessageTextView.setText(message.text);
+                aiMessageTextView.setText(parseBold(message.text));
 
                 btnCopyAi.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -634,10 +663,16 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            if (selectedAiModel.equals("Gemini 2.0 Flash")) {
-                currentAiModel = "gemini-2.0-flash";
-            } else {
-                currentAiModel = "gemini-1.5-flash";
+            switch (selectedAiModel) {
+                case "Gemini 3.0 Flash":
+                    currentAiModel = "gemini-3-flash-preview";
+                    break;
+                case "Gemini 2.5 Flash":
+                    currentAiModel = "gemini-2.5-flash";
+                    break;
+                default: // Другая модель
+                    currentAiModel = !TextUtils.isEmpty(customModel) ? customModel : "gemini-3-flash-preview";
+                    break;
             }
         }
 
@@ -662,7 +697,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 urlConnection.setRequestProperty("Content-Type", "application/json");
                 urlConnection.setDoOutput(true);
                 urlConnection.setConnectTimeout(10000);
-                urlConnection.setReadTimeout(15000);
+                urlConnection.setReadTimeout(45000);
 
                 JsonObject requestBody = new JsonObject();
                 JsonArray contentsArray = new JsonArray();
@@ -684,7 +719,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 generationConfig.addProperty("topK", topK);
                 generationConfig.addProperty("topP", topP);
                 requestBody.add("generationConfig", generationConfig);
-
 
                 String jsonInputString = gson.toJson(requestBody);
                 Log.d(TAG, "Request JSON: " + jsonInputString);
@@ -763,6 +797,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             }
             return "Unknown error while receiving a response.";
         }
+
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);

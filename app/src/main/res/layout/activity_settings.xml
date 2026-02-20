@@ -50,8 +50,28 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:entries="@array/ai_models_array"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="8dp"
                 android:padding="8dp" />
+
+            <TextView
+                android:id="@+id/label_custom_model"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/custom_model_label"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:layout_marginBottom="4dp"
+                android:visibility="gone"/>
+
+            <EditText
+                android:id="@+id/edit_text_custom_model"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/custom_model_hint"
+                android:inputType="text"
+                android:layout_marginBottom="16dp"
+                android:background="@android:drawable/editbox_background"
+                android:visibility="gone"/>
 
             <TextView
                 android:layout_width="match_parent"

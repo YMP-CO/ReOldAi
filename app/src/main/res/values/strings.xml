@@ -17,6 +17,8 @@
     <string name="api_key_hint">Your Gemini API key</string>
     <string name="ai_model_label">AI Model:</string>
     <string name="save_settings">Save Settings</string>
+    <string name="custom_model_label">Model name:</string>
+    <string name="custom_model_hint">Example: gemini-2.0-flash-lite</string>
 
     <!-- Generation Settings -->
     <string name="generation_config_label">Generation Settings:</string>
@@ -33,16 +35,16 @@
     <string name="used_libraries_label">Used Libraries:</string>
     <string name="gemini_info_label">Gemini Information:</string>
     <string name="libraries_list">Android Support Library (AppCompat, v4), Conscrypt, Google GSON, Google Fonts (Fira Code)</string>
-    <string name="gemini_api_info">Uses official Gemini 1.5 Flash / Gemini Pro / Gemini 2.0 Flash API.</string>
+    <string name="gemini_api_info">Uses official Gemini 3.0 Flash / Gemini 2.5 Flash API.</string>
 
-    <!-- AI Models Array -->
     <string-array name="ai_models_array">
-        <item>Gemini 1.5 Flash</item>
-        <item>Gemini 2.0 Flash</item>
+        <item>Gemini 3.0 Flash</item>
+        <item>Gemini 2.5 Flash</item>
+        <item>Other model</item>
     </string-array>
+
     <string name="privacy_policy_google_label">Google Privacy Policy: https://policies.google.com/privacy</string>
     <string name="privacy_policy_gemini_label">Google AI Studio (Gemini) Terms of Service: https://ai.google.dev/gemini-api/terms</string>
-
     <string name="social_media_label">My social media:</string>
     <string name="social_youtube_ymp_yuri">YouTube (YMP Yuri): https://www.youtube.com/@YMP_Yuri</string>
     <string name="social_github_ymp_yuri">GitHub (YMP_CO): https://github.com/YMP-CO</string>
